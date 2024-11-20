@@ -1,16 +1,15 @@
 {
   "files": {
-    "main.css": "/office-presence/static/css/main.d1db4475.css",
-    "main.js": "/office-presence/static/js/main.a0155b25.js",
+    "main.css": "/office-presence/static/css/main.3c426067.css",
+    "main.js": "/office-presence/static/js/main.fa55d0f1.js",
     "static/js/952.a6eaa7f7.chunk.js": "/office-presence/static/js/952.a6eaa7f7.chunk.js",
-    "static/media/Logo-V.svg": "/office-presence/static/media/Logo-V.af5f81ace4dcad013a33ae3b2adb3726.svg",
     "index.html": "/office-presence/index.html",
-    "main.d1db4475.css.map": "/office-presence/static/css/main.d1db4475.css.map",
-    "main.a0155b25.js.map": "/office-presence/static/js/main.a0155b25.js.map",
+    "main.3c426067.css.map": "/office-presence/static/css/main.3c426067.css.map",
+    "main.fa55d0f1.js.map": "/office-presence/static/js/main.fa55d0f1.js.map",
     "952.a6eaa7f7.chunk.js.map": "/office-presence/static/js/952.a6eaa7f7.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.d1db4475.css",
-    "static/js/main.a0155b25.js"
+    "static/css/main.3c426067.css",
+    "static/js/main.fa55d0f1.js"
   ]
 }
