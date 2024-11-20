@@ -514,19 +514,19 @@ function App() {
         <div className="flex justify-center items-center space-x-4 p-2">
           <button 
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="px-3 py-1 rounded hover:bg-gray-100"
+            className="px-3 py-1 rounded text-white hover:bg-[#FF4B12]"
           >
             ←
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-3 py-1 rounded hover:bg-gray-100"
+            className="px-3 py-1 rounded text-white hover:bg-[#FF4B12]"
           >
             Today
           </button>
           <button 
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="px-3 py-1 rounded hover:bg-gray-100"
+            className="px-3 py-1 rounded text-white hover:bg-[#FF4B12]"
           >
             →
           </button>
@@ -785,7 +785,7 @@ function App() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">Office Presence Calendar</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">a·<span className="text-[#FF4B12]">V</span>·lblity</h1>
                 <p className="text-sm sm:text-base text-gray-300">
                   Welcome, {userProfiles[session.user.id]?.name || 'Loading...'}
                 </p>
@@ -793,7 +793,7 @@ function App() {
               <div className="flex w-full sm:w-auto space-x-2">
                 <button
                   onClick={() => setShowWelcomeGuide(true)}
-                  className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                  className="px-4 py-2 text-white border border-white rounded hover:bg-[#FF4B12] hover:text-white"
                 >
                   Help
                 </button>
