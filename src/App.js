@@ -17,6 +17,7 @@ import {
   startOfDay,
   addDays
 } from 'date-fns';
+import { ReactComponent as LogoV } from './Logo-V.svg'; // Import as React component
 
 const supabaseUrl = 'https://ehgfrephppdiipnyulsq.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZ2ZyZXBocHBkaWlwbnl1bHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4ODYxNzcsImV4cCI6MjA0NzQ2MjE3N30.j6TucW-RnuDgPaBvl74pnX2PMQQFM1fjxavf20k3Gwc';
@@ -67,13 +68,16 @@ const AuthForm = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#1B365D] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {authMode === 'signin' ? 'Sign in to your account' : 'Create new account'}
-          </h2>
+        <div className="flex justify-center items-center">
+          <h1 className="text-center text-5xl font-extrabold text-white mb-4">
+            a·<span className="text-[#FF4B12]">V</span>·lblity
+          </h1>
         </div>
+        <h2 className="text-center text-xl text-gray-300">
+          {authMode === 'signin' ? 'Sign in to your account' : 'Create new account'}
+        </h2>
         <form className="mt-8 space-y-6" onSubmit={authMode === 'signin' ? handleSignIn : handleSignUp}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -113,7 +117,7 @@ const AuthForm = ({
           </div>
 
           {authError && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="text-[#FF4B12] text-sm text-center">
               {authError}
             </div>
           )}
@@ -131,7 +135,7 @@ const AuthForm = ({
         <div className="text-center">
           <button
             onClick={handleModeSwitch}
-            className="text-sm text-blue-600 hover:text-blue-500"
+            className="text-sm text-[#FF4B12] hover:text-[#FF6B35]"
           >
             {authMode === 'signin' 
               ? "Don't have an account? Sign up" 
@@ -761,52 +765,54 @@ function App() {
   };
 
   return (
-    <div className="container mx-auto px-1 sm:px-4 py-2 sm:py-4">
-      {!session ? (
-        <AuthForm 
-          authMode={authMode}
-          setAuthMode={setAuthMode}
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleSignIn={handleSignIn}
-          handleSignUp={handleSignUp}
-          authError={authError}
-          name={name}
-          setName={setName}
-        />
-      ) : (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Office Presence Calendar</h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Welcome, {userProfiles[session.user.id]?.name || 'Loading...'}
-              </p>
+    <div className="bg-[#1B365D] min-h-screen">
+      <div className="container mx-auto px-1 sm:px-4 py-2 sm:py-4">
+        {!session ? (
+          <AuthForm 
+            authMode={authMode}
+            setAuthMode={setAuthMode}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            handleSignIn={handleSignIn}
+            handleSignUp={handleSignUp}
+            authError={authError}
+            name={name}
+            setName={setName}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">Office Presence Calendar</h1>
+                <p className="text-sm sm:text-base text-gray-300">
+                  Welcome, {userProfiles[session.user.id]?.name || 'Loading...'}
+                </p>
+              </div>
+              <div className="flex w-full sm:w-auto space-x-2">
+                <button
+                  onClick={() => setShowWelcomeGuide(true)}
+                  className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                >
+                  Help
+                </button>
+                <button 
+                  onClick={handleSignOut}
+                  className="w-full sm:w-auto bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm sm:text-base"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
-            <div className="flex w-full sm:w-auto space-x-2">
-              <button
-                onClick={() => setShowWelcomeGuide(true)}
-                className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
-              >
-                Help
-              </button>
-              <button 
-                onClick={handleSignOut}
-                className="w-full sm:w-auto bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm sm:text-base"
-              >
-                Sign Out
-              </button>
-            </div>
+            {renderCalendar()}
+            <FloatingActionButton />
+            <QuickActionMenu />
+            <ConfirmDialog />
+            <WelcomeGuide />
           </div>
-          {renderCalendar()}
-          <FloatingActionButton />
-          <QuickActionMenu />
-          <ConfirmDialog />
-          <WelcomeGuide />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
