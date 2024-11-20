@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   format, 
@@ -14,7 +14,8 @@ import {
   isPast,
   isFuture,
   startOfToday,
-  startOfDay
+  startOfDay,
+  addDays
 } from 'date-fns';
 
 const supabaseUrl = 'https://ehgfrephppdiipnyulsq.supabase.co';
@@ -35,20 +36,34 @@ const AuthForm = ({
   name,
   setName 
 }) => {
-  // Auto-fill name when email changes, but only if name is empty
+  // Update name extraction to get the full name from email
   useEffect(() => {
-    if (authMode === 'signup' && email && !name) {
-      const defaultName = email.split('@')[0];
+    if (authMode === 'signup' && email) {
+      // Only set the default name if there isn't already a manually entered name
+      // or if we're switching to signup mode
+      const defaultName = email.split('@')[0]
+        .split('.')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
       setName(defaultName);
     }
-  }, [email, authMode, name]);
+  }, [email, authMode]); // Remove name and setName from dependencies
 
-  // Reset form when switching modes
+  // Update mode switch to handle name properly
   const handleModeSwitch = () => {
-    setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
-    setEmail('');
-    setPassword('');
-    setName('');
+    const newMode = authMode === 'signin' ? 'signup' : 'signin';
+    setAuthMode(newMode);
+    
+    // Reset name when switching to signin, set default name when switching to signup
+    if (newMode === 'signin') {
+      setName('');
+    } else if (email) {
+      const defaultName = email.split('@')[0]
+        .split('.')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+      setName(defaultName);
+    }
   };
 
   return (
@@ -149,7 +164,9 @@ function App() {
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState('');
   const [userColors, setUserColors] = useState({});
-  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [confirmDate, setConfirmDate] = useState(null);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -210,6 +227,12 @@ function App() {
         .subscribe((status) => {
           console.log('Subscription status:', status);
         });
+
+      // Check if user has seen the welcome guide
+      const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
+      if (!hasSeenGuide) {
+        setShowWelcomeGuide(true);
+      }
 
       return () => {
         console.log('Cleaning up subscription');
@@ -407,31 +430,71 @@ function App() {
                   ${!isSameMonth(day, date) ? 'bg-gray-100' : 'bg-white'}
                   ${isPastDay ? 'bg-gray-200 opacity-50' : ''}
                   ${isCurrentUserPresent && !isPastDay ? 'bg-green-50' : ''}
-                  ${isPastDay ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}
+                  ${isPastDay ? 'cursor-not-allowed' : 'cursor-pointer'}
+                  group
                 `}
-                onClick={() => !isPastDay && togglePresence(day)}
+                onDoubleClick={() => {
+                  if (!isPastDay && !isQuickActionOpen) {
+                    togglePresence(day);
+                  }
+                }}
               >
                 <div className={`
+                  relative z-10
                   text-xs sm:text-sm font-semibold mb-1 
                   ${isPastDay ? 'text-gray-500' : ''}
                   ${isToday(day) ? 'text-blue-700' : ''}
                 `}>
                   {format(day, 'd')}
                 </div>
-                <div className="space-y-0.5 sm:space-y-1 overflow-y-auto max-h-[50px] sm:max-h-[80px]">
-                  {inOfficeUsers.map(({ name, color }, i) => (
+                
+                <div className="relative z-10">
+                  <div className="space-y-0.5 sm:space-y-1 overflow-y-auto max-h-[50px] sm:max-h-[80px] relative">
+                    {inOfficeUsers.slice(0, 3).map(({ name, color }, i) => (
+                      <div 
+                        key={i}
+                        className="text-[10px] sm:text-xs p-0.5 sm:p-1 rounded truncate"
+                        style={{ 
+                          backgroundColor: color || 'rgb(220, 252, 231)',
+                          opacity: isPastDay ? 0.5 : 1
+                        }}
+                        title={name}
+                      >
+                        {name}
+                      </div>
+                    ))}
+                    {inOfficeUsers.length > 3 && (
+                      <div 
+                        className="text-[10px] sm:text-xs text-gray-500 font-medium overflow-area cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        +{inOfficeUsers.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                  
+                  {inOfficeUsers.length > 3 && (
                     <div 
-                      key={i}
-                      className="text-[10px] sm:text-xs p-0.5 sm:p-1 rounded truncate"
-                      style={{ 
-                        backgroundColor: color || 'rgb(220, 252, 231)',
-                        opacity: isPastDay ? 0.5 : 1
-                      }}
-                      title={name}
+                      className="absolute left-0 top-0 mt-1 hidden group-hover:block bg-white border rounded-lg shadow-lg p-2 z-20 w-48 overflow-area"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {name}
+                      <div className="text-xs font-medium mb-1">All present:</div>
+                      {inOfficeUsers.map(({ name, color }, i) => (
+                        <div 
+                          key={i}
+                          className="text-xs p-0.5 rounded mb-1"
+                          style={{ 
+                            backgroundColor: color || 'rgb(220, 252, 231)',
+                            opacity: isPastDay ? 0.5 : 1
+                          }}
+                        >
+                          {name}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             );
@@ -523,65 +586,175 @@ function App() {
     if (error) console.error('Error signing out:', error);
   };
 
-  const renderLegend = () => {
-    const activeUsers = new Set();
-    Object.values(presenceData).forEach(dayPresence => {
-      Object.entries(dayPresence).forEach(([userId, presence]) => {
-        if (presence.in_office) {
-          activeUsers.add(userId);
-        }
-      });
-    });
+  const handleDayClick = (day, isCurrentUserPresent) => {
+    if (isPast(startOfDay(day)) && !isToday(day)) return;
+    
+    if (isCurrentUserPresent) {
+      setConfirmDate(day);
+    } else {
+      togglePresence(day);
+    }
+  };
+
+  const ConfirmDialog = () => {
+    if (!confirmDate) return null;
 
     return (
-      <div 
-        className={`
-          fixed top-0 right-0 h-full bg-white shadow-lg w-64 transform transition-transform duration-300 ease-in-out
-          ${isLegendOpen ? 'translate-x-0' : 'translate-x-full'}
-          z-50
-        `}
-      >
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Team Members</h3>
+      <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+          <h3 className="text-lg font-semibold mb-4">
+            Remove office presence?
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to remove your presence for {format(confirmDate, 'MMMM d, yyyy')}?
+          </p>
+          <div className="flex justify-end space-x-3">
             <button
-              onClick={() => setIsLegendOpen(false)}
+              onClick={() => setConfirmDate(null)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                togglePresence(confirmDate);
+                setConfirmDate(null);
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add Quick Action Menu component
+  const QuickActionMenu = () => {
+    if (!isQuickActionOpen) return null;
+
+    const today = new Date();
+    const dates = Array.from({ length: 5 }, (_, i) => addDays(today, i));
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-25 flex items-end sm:items-center justify-center z-50">
+        <div className="bg-white rounded-t-lg sm:rounded-lg p-4 w-full sm:w-96 max-w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Quick Toggle Presence</h3>
+            <button
+              onClick={() => setIsQuickActionOpen(false)}
               className="text-gray-500 hover:text-gray-700"
             >
               ✕
             </button>
           </div>
           <div className="space-y-2">
-            {Array.from(activeUsers).map(userId => (
-              <div 
-                key={userId}
-                className="flex items-center p-2 rounded"
-                style={{ 
-                  backgroundColor: userColors[userId] || 'rgb(220, 252, 231)'
-                }}
-              >
-                <span className="text-sm">
-                  {userProfiles[userId]?.name || 'Unknown'}
-                </span>
-              </div>
-            ))}
+            {dates.map(date => {
+              const dateStr = format(date, 'yyyy-MM-dd');
+              const isPresent = presenceData[dateStr]?.[session?.user?.id]?.in_office;
+              
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => {
+                    togglePresence(date);
+                    // Don't close menu to allow multiple toggles
+                  }}
+                  className={`
+                    w-full p-3 rounded-lg flex items-center justify-between
+                    ${isPresent ? 'bg-green-100 hover:bg-green-200' : 'bg-gray-100 hover:bg-gray-200'}
+                    transition-colors
+                  `}
+                >
+                  <span className="font-medium">
+                    {isToday(date) ? 'Today' : format(date, 'EEEE, MMM d')}
+                  </span>
+                  <span className={`text-sm ${isPresent ? 'text-green-600' : 'text-gray-500'}`}>
+                    {isPresent ? 'Will be in office' : 'Not in office'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-6 pt-4 border-t">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-blue-50"></div>
-                <span className="text-sm">Today</span>
+          <button
+            onClick={() => setIsQuickActionOpen(false)}
+            className="w-full mt-4 p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Add Floating Action Button
+  const FloatingActionButton = () => (
+    <button
+      onClick={() => setIsQuickActionOpen(true)}
+      className="fixed bottom-4 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 flex items-center justify-center z-40"
+    >
+      <span className="text-2xl">+</span>
+    </button>
+  );
+
+  // Keep the simple WelcomeGuide component
+  const WelcomeGuide = () => {
+    if (!showWelcomeGuide) return null;
+
+    const handleClose = () => {
+      localStorage.setItem('hasSeenWelcomeGuide', 'true');
+      setShowWelcomeGuide(false);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="flex justify-between items-start">
+            <h3 className="text-lg font-semibold">Welcome to Office Presence!</h3>
+            <button
+              onClick={handleClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="mt-4 space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                1
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-green-50"></div>
-                <span className="text-sm">Your selected days</span>
+              <p className="text-gray-600">
+                Double-click/tap any date to toggle your presence for that day
+              </p>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                2
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-gray-200 opacity-50"></div>
-                <span className="text-sm">Past days</span>
+              <p className="text-gray-600">
+                Days highlighted in green are those where people will be in the office
+              </p>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                3
               </div>
+              <p className="text-gray-600">
+                Hover over busy days to see everyone who'll be present
+              </p>
             </div>
           </div>
+
+          <button
+            onClick={handleClose}
+            className="mt-6 w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Got it!
+          </button>
         </div>
       </div>
     );
@@ -614,10 +787,10 @@ function App() {
             </div>
             <div className="flex w-full sm:w-auto space-x-2">
               <button
-                onClick={() => setIsLegendOpen(true)}
+                onClick={() => setShowWelcomeGuide(true)}
                 className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
               >
-                Show Legend
+                Help
               </button>
               <button 
                 onClick={handleSignOut}
@@ -628,13 +801,10 @@ function App() {
             </div>
           </div>
           {renderCalendar()}
-          {renderLegend()}
-          {isLegendOpen && (
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-25 z-40 lg:hidden"
-              onClick={() => setIsLegendOpen(false)}
-            />
-          )}
+          <FloatingActionButton />
+          <QuickActionMenu />
+          <ConfirmDialog />
+          <WelcomeGuide />
         </div>
       )}
     </div>
