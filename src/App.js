@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   format, 
@@ -17,11 +17,19 @@ import {
   startOfDay,
   addDays
 } from 'date-fns';
-import { ReactComponent as LogoV } from './Logo-V.svg'; // Import as React component
 
 const supabaseUrl = 'https://ehgfrephppdiipnyulsq.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZ2ZyZXBocHBkaWlwbnl1bHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4ODYxNzcsImV4cCI6MjA0NzQ2MjE3N30.j6TucW-RnuDgPaBvl74pnX2PMQQFM1fjxavf20k3Gwc';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Add this function at the top level to generate distinct colors
+const generateDistinctColors = (count) => {
+  const hueStep = 360 / count;
+  return Array.from({ length: count }, (_, i) => {
+    const hue = i * hueStep;
+    return `hsl(${hue}, 70%, 85%)`; // Light pastel colors
+  });
+};
 
 // Move AuthForm outside of App component
 const AuthForm = ({ 
@@ -37,25 +45,20 @@ const AuthForm = ({
   name,
   setName 
 }) => {
-  // Update name extraction to get the full name from email
   useEffect(() => {
     if (authMode === 'signup' && email) {
-      // Only set the default name if there isn't already a manually entered name
-      // or if we're switching to signup mode
       const defaultName = email.split('@')[0]
         .split('.')
         .map(part => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ');
       setName(defaultName);
     }
-  }, [email, authMode]); // Remove name and setName from dependencies
+  }, [email, authMode]);
 
-  // Update mode switch to handle name properly
   const handleModeSwitch = () => {
     const newMode = authMode === 'signin' ? 'signup' : 'signin';
     setAuthMode(newMode);
     
-    // Reset name when switching to signin, set default name when switching to signup
     if (newMode === 'signin') {
       setName('');
     } else if (email) {
@@ -145,15 +148,6 @@ const AuthForm = ({
       </div>
     </div>
   );
-};
-
-// Add this function at the top level to generate distinct colors
-const generateDistinctColors = (count) => {
-  const hueStep = 360 / count;
-  return Array.from({ length: count }, (_, i) => {
-    const hue = i * hueStep;
-    return `hsl(${hue}, 70%, 85%)`; // Light pastel colors
-  });
 };
 
 function App() {
